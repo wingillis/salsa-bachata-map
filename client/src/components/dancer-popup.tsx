@@ -1,42 +1,8 @@
-import { ExternalLink, Crosshair } from "lucide-react";
+import { ExternalLink, Crosshair, User } from "lucide-react";
 import { SiInstagram, SiTiktok } from "react-icons/si";
 import { useMap } from "react-leaflet";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { Dancer } from "@/types/schema";
-
-// Hook to pre-filter dancers based on image existence
-export function useDancersWithImages(dancers: Dancer[]) {
-  const [filteredDancers, setFilteredDancers] = useState<Dancer[]>([]);
-
-  useEffect(() => {
-    const base = import.meta.env.BASE_URL;
-
-    // Create image existence checks for all dancers
-    const imageChecks = dancers.map(dancer => {
-      const profilePicUrl = dancer.profilePic.startsWith('http')
-        ? dancer.profilePic
-        : `${base}${dancer.profilePic.startsWith('/') ? dancer.profilePic.slice(1) : dancer.profilePic}`;
-
-      return new Promise<{ dancer: Dancer; exists: boolean }>((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({ dancer, exists: true });
-        img.onerror = () => resolve({ dancer, exists: false });
-        img.src = profilePicUrl;
-      });
-    });
-
-    // Wait for all image checks to complete
-    Promise.all(imageChecks).then(results => {
-      const validDancers = results
-        .filter(result => result.exists)
-        .map(result => result.dancer);
-
-      setFilteredDancers(validDancers);
-    });
-  }, [dancers]);
-
-  return filteredDancers;
-}
 
 interface DancerPopupProps {
   dancer: Dancer;
@@ -49,6 +15,7 @@ function DancerPopupContent({ dancer }: DancerPopupProps) {
     ? dancer.profilePic
     : `${base}${dancer.profilePic.startsWith('/') ? dancer.profilePic.slice(1) : dancer.profilePic}`;
 
+  const [imageError, setImageError] = useState(false);
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   const centerOnMap = () => {
@@ -60,12 +27,19 @@ function DancerPopupContent({ dancer }: DancerPopupProps) {
   return (
     <div className="min-w-[240px] max-w-[280px]">
       <div className="mb-3 flex justify-center">
-        <img
-          src={profilePicUrl}
-          alt={`${dancer.name} - Profile Photo`}
-          className="w-20 h-20 rounded-full object-cover border-2 border-border shadow-lg/20"
-          data-testid={`profile-pic-${dancer.id}`}
-        />
+        {imageError ? (
+          <div className="w-20 h-20 rounded-full bg-muted border-2 border-border shadow-lg/20 flex items-center justify-center">
+            <User className="h-10 w-10 text-muted-foreground" />
+          </div>
+        ) : (
+          <img
+            src={profilePicUrl}
+            alt={`${dancer.name} - Profile Photo`}
+            className="w-20 h-20 rounded-full object-cover border-2 border-border shadow-lg/20"
+            data-testid={`profile-pic-${dancer.id}`}
+            onError={() => setImageError(true)}
+          />
+        )}
       </div>
 
       <div className="mb-2">

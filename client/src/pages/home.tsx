@@ -13,18 +13,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useStaticDancers } from "@/hooks/useStaticDancers";
-import { useDancersWithImages } from "@/components/dancer-popup";
 
 export default function Home() {
   const [mode, setMode] = useState<"salsa" | "bachata">("salsa");
 
   const { data: dancers = [], isLoading } = useStaticDancers();
 
-  // First filter by type (salsa/bachata)
-  const typeFilteredDancers = dancers.filter((dancer) => dancer.type === mode);
-
-  // Then filter by actual image existence using the pre-filtering hook
-  const filteredDancers = useDancersWithImages(typeFilteredDancers);
+  // Filter by type (salsa/bachata)
+  const filteredDancers = dancers.filter((dancer) => dancer.type === mode);
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
